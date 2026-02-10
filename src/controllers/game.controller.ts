@@ -2,6 +2,7 @@ import axios from "axios";
 import type { NextFunction, Request, Response} from "express"
 export const getGameList = async (req: Request, res: Response,next:NextFunction) => {
   try {
+    const gameIDs = req.query.gameIDs as number[] | undefined;
     let data = JSON.stringify({
       CompanyKey: "CB33E42BFAD04F90BA3B25F7EB257810",
       ServerId: "test01",

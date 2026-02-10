@@ -38,7 +38,14 @@ export const Register = async (
       [name, hashed]
     );
 
-    const user = result.rows[0];
+    const user = await result.rows[0];
+
+
+    await client.query(
+      `INSERT INTO wallets (user_id, balance)
+       VALUES ($1, 0)`,
+      [user.id]
+    )
 
     // External registration (retry once)
     try {
@@ -51,13 +58,18 @@ export const Register = async (
           CompanyKey: process.env.COMPANY_KEY || "CB33E42BFAD04F90BA3B25F7EB257810",
           ServerId: process.env.SERVER_ID || "test01",
         }
-      );
+      ).then(response => {
+        if(response.data?.error && response.data?.error?.id > 0) {
+          throw new Error("External API registration failed: " + response.data.message);
+        }
+        console.log("External registration successful for user:", name);
+      }).catch(error => {throw error});
     } catch (apiError) {
       // Compensation: remove local user
       await client.query("DELETE FROM users WHERE id=$1", [user.id]);
       await client.query("ROLLBACK");
 
-      return res.status(502).json({
+      return res.status(400).json({
         message: "External provider registration failed",
       });
     }
@@ -77,6 +89,7 @@ export const Register = async (
     res.status(201).json({ token, user });
 
   } catch (err) {
+    res.status(500).json({ message: "Registration failed", error: err });
     await client.query("ROLLBACK");
     next(err);
   } finally {
