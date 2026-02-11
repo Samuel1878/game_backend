@@ -150,10 +150,11 @@ export const Register = async (
 // };
 
 export const Login = async (req: Request, res: Response, next: NextFunction) => {
+    const client = await pool.connect();
   try {
     const { name, password } = req.body;
     let userRes:ApiResponse;
-  const client = await pool.connect();
+
     const userResult = await client.query(
       "SELECT * FROM users WHERE name=$1",
       [name]
@@ -182,7 +183,7 @@ export const Login = async (req: Request, res: Response, next: NextFunction) => 
       ).then(response => response.data).catch(error => {throw error});
     } catch (apiError) {
       // Compensation: remove local user
-      await client.query("DELETE FROM users WHERE id=$1", [user.id]);
+      
       await client.query("ROLLBACK");
 
       return res.status(502).json({
@@ -203,7 +204,8 @@ export const Login = async (req: Request, res: Response, next: NextFunction) => 
     res.status(200).json({ token, user , url:userRes.url});
 
   } catch (err) {
-
+   await client.query("ROLLBACK")
+   res.status(500).json({message:"Internal Server Error!"})
     next(err);
   }
 };

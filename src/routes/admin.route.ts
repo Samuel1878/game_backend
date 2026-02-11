@@ -1,4 +1,4 @@
-import { getDeposits, updateDeposit } from "@/controllers/tran.controller.js";
+import { getDeposits, getWithdrawals, updateDeposit, updateWithdrawals } from "@/controllers/tran.controller.js";
 import { getUsers } from "@/controllers/user.controller.js";
 import { Router } from "express";
 
@@ -9,5 +9,7 @@ router.get("/", (req, res) => {
 });
 router.get("/users", getUsers);
 router.get("/get_deposits", getDeposits);
-router.put("/update_deposit", updateDeposit)
+router.put("/update_deposit", updateDeposit);
+router.get("/get_withdrawals", getWithdrawals);
+router.put("/update_withdrawals", updateWithdrawals)
 export default router;

@@ -1,5 +1,5 @@
 
-import { deposit } from "@/controllers/tran.controller.js";
+import { createWithdraw, deposit } from "@/controllers/tran.controller.js";
 import { getUserBallance } from "@/controllers/user.controller.js";
 import { Router } from "express";
 
@@ -22,9 +22,7 @@ router.get("/history", (req, res) => {
 router.post("/transaction/deposit", deposit);
 
 
-router.post("/transaction/withdraw", (req, res) => {
-  res.send("Withdraw endpoint");
-});
+router.post("/transaction/withdraw",createWithdraw);
 
 // router.post("/get-user", Register
 // );
