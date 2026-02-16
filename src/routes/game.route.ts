@@ -1,9 +1,9 @@
 import { Router } from "express";
-import { getGameList } from "@/controllers/game.controller.js";
+import { getGameByGpId, getGameList } from "@/controllers/game.controller.js";
 
 
 const router = Router();
 
 router.get("/game_list", getGameList);
-
+router.get("/get_game_gpid", getGameByGpId)
 export default router;

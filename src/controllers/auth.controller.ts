@@ -8,20 +8,16 @@ import jwt from "jsonwebtoken";
 export const Register = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const client = await pool.connect();
-
   try {
     const { name, password } = req.body;
-
     await client.query("BEGIN");
-
     // Check existing
-    const exists = await client.query(
-      "SELECT id FROM users WHERE name=$1",
-      [name]
-    );
+    const exists = await client.query("SELECT id FROM users WHERE name=$1", [
+      name,
+    ]);
 
     if (exists.rows.length) {
       await client.query("ROLLBACK");
@@ -29,41 +25,43 @@ export const Register = async (
     }
 
     const hashed = await bcrypt.hash(password, 10);
-
     // Insert local user
     const result = await client.query(
       `INSERT INTO users (name,password)
        VALUES ($1,$2)
        RETURNING *`,
-      [name, hashed]
+      [name, hashed],
     );
 
     const user = await result.rows[0];
-
-
     await client.query(
       `INSERT INTO wallets (user_id, balance)
        VALUES ($1, 0)`,
-      [user.id]
-    )
+      [user.id],
+    );
 
     // External registration (retry once)
     try {
-      await axiosInstance.post(
-        "/web-root/restricted/player/register-player.aspx",
-        {
+      await axiosInstance
+        .post("/web-root/restricted/player/register-player.aspx", {
           Username: name,
           UserGroup: "a",
-          Agent: "AgentSamuel96",
-          CompanyKey: process.env.COMPANY_KEY || "CB33E42BFAD04F90BA3B25F7EB257810",
-          ServerId: process.env.SERVER_ID || "test01",
-        }
-      ).then(response => {
-        if(response.data?.error && response.data?.error?.id > 0) {
-          throw new Error("External API registration failed: " + response.data.message);
-        }
-        console.log("External registration successful for user:", name);
-      }).catch(error => {throw error});
+          Agent: "AgentMM",
+          CompanyKey:
+            process.env.COMPANY_KEY || "CB33E42BFAD04F90BA3B25F7EB257810",
+          ServerId: process.env.SERVER_ID || "test02",
+        })
+        .then((response) => {
+          if (response.data?.error && response.data?.error?.id > 0) {
+            throw new Error(
+              "External API registration failed: " + response.data.message,
+            );
+          }
+          console.log("External registration successful for user:", name);
+        })
+        .catch((error) => {
+          throw error;
+        });
     } catch (apiError) {
       // Compensation: remove local user
       await client.query("DELETE FROM users WHERE id=$1", [user.id]);
@@ -81,13 +79,12 @@ export const Register = async (
     const token = jwt.sign(
       { id: user.uid, name: user.name },
       process.env.JWT_SECRET!,
-      { expiresIn: "1h" }
+      { expiresIn: "1h" },
     );
 
     delete user.password;
 
     res.status(201).json({ token, user });
-
   } catch (err) {
     res.status(500).json({ message: "Registration failed", error: err });
     await client.query("ROLLBACK");
@@ -95,70 +92,22 @@ export const Register = async (
   } finally {
     client.release();
   }
-};
+};9
 
-// export const Register = async (req: Request, res: Response, next: NextFunction) => {
-    
-//   try {
-//     const { name, password } = req.body;
 
-//     // Check existing user
-//     const exists = await pool.query(
-//       "SELECT id FROM users WHERE name=$1",
-//       [name]
-//     );
-
-//     if (exists.rows.length)
-//       return res.status(400).json({ message: "User already exists" });
-
-//     const hashed = await bcrypt.hash(password, 10);
-
-//     const result = await pool.query(
-//       `INSERT INTO users (name,password)
-//        VALUES ($1,$2)
-//        RETURNING *`,
-//       [name, hashed]
-//     );
-
-//     const user = result.rows[0];
-
-//     // External API registration
-//     await axiosInstance.post(
-//       "/web-root/restricted/player/register-player.aspx",
-//       {
-//         Username: name,
-//         UserGroup: "a",
-//         Agent: "AgentSamuel96",
-//         CompanyKey: process.env.COMPANY_KEY || "CB33E42BFAD04F90BA3B25F7EB257810",
-//         ServerId: process.env.SERVER_ID || "test01",
-//       }
-//     );
-
-//     // Auto login
-//     const token = jwt.sign(
-//       { id: user.uid, name: user.name },
-//       process.env.JWT_SECRET || "supersecretkey123",
-//       { expiresIn: "1h" }
-//     );
-//      delete user.password;
-//      console.log("User registered:", user.name);
-//     res.status(201).json({ token, user });
-
-//   } catch (err) {
-//     next(err);
-//   }
-// };
-
-export const Login = async (req: Request, res: Response, next: NextFunction) => {
-    const client = await pool.connect();
+export const Login = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  const client = await pool.connect();
   try {
     const { name, password } = req.body;
-    let userRes:ApiResponse;
+    let userRes: ApiResponse;
 
-    const userResult = await client.query(
-      "SELECT * FROM users WHERE name=$1",
-      [name]
-    );
+    const userResult = await client.query("SELECT * FROM users WHERE name=$1", [
+      name,
+    ]);
 
     if (!userResult.rows.length)
       return res.status(401).json({ message: "Invalid credentials (name)" });
@@ -168,22 +117,27 @@ export const Login = async (req: Request, res: Response, next: NextFunction) => 
     const valid = await bcrypt.compare(password, user.password);
 
     if (!valid)
-      return res.status(401).json({ message: "Invalid credentials (password)" });
+      return res
+        .status(401)
+        .json({ message: "Invalid credentials (password)" });
     try {
-      userRes = await axiosInstance.post(
-        "/web-root/restricted/player/login.aspx",
-        {
-                IsWapSports: false,
-                Username: user.name,
-                Portfolio: "SeamlessGame",
-                CompanyKey: process.env.COMPANY_KEY || "CB33E42BFAD04F90BA3B25F7EB257810",
-                ServerId: process.env.SERVER_ID || "test01",
-          
-        }
-      ).then(response => response.data).catch(error => {throw error});
-    } catch (apiError) {
+      userRes = await axiosInstance
+        .post("/web-root/restricted/player/login.aspx", {
+          IsWapSports: false,
+          Username: user.name,
+          Portfolio: "SeamlessGame",
+          CompanyKey:
+            process.env.COMPANY_KEY || "CB33E42BFAD04F90BA3B25F7EB257810",
+          ServerId: process.env.SERVER_ID || "test01",
+        })
+        .then((response) => response.data)
+        .catch((error) => {
+          throw error;
+
+        });
+   } catch (apiError) {
       // Compensation: remove local user
-      
+
       await client.query("ROLLBACK");
 
       return res.status(502).json({
@@ -191,107 +145,19 @@ export const Login = async (req: Request, res: Response, next: NextFunction) => 
       });
     }
 
-    
-  await client.query("COMMIT");
+    await client.query("COMMIT");
     const token = jwt.sign(
       { id: user.uid, name: user.name },
       process.env.JWT_SECRET || "supersecretkey123",
-      { expiresIn:"1d" }
+      { expiresIn: "1d" },
     );
 
     delete user.password;
     console.log("User logged in:", user.name);
-    res.status(200).json({ token, user , url:userRes.url});
-
+    res.status(200).json({ token, user, url: userRes.url });
   } catch (err) {
-   await client.query("ROLLBACK")
-   res.status(500).json({message:"Internal Server Error!"})
+    await client.query("ROLLBACK");
+    res.status(500).json({ message: "Internal Server Error!" });
     next(err);
   }
 };
-// export const Login = async (req: Request, res: Response, next: NextFunction) => {
-//   try {
-//     const { email, password } = req.body;
-
-//     const user = await pool.query(
-//       "SELECT * FROM users WHERE email=$1",
-//       [email]
-//     );
-
-//     if (!user.rows.length)
-//       return res.status(401).json({ message: "Invalid credentials" });
-
-//     const valid = await bcrypt.compare(password, user.rows[0].password);
-
-//     if (!valid)
-//       return res.status(401).json({ message: "Invalid credentials" });
-
-//     const token = jwt.sign(
-//       {
-//         id: user.rows[0].id,
-//         role: user.rows[0].role
-//       },
-//       process.env.JWT_SECRET!,
-//       { expiresIn: process.env.JWT_EXPIRES }
-//     );
-
-//     delete user.rows[0].password;
-
-//     res.json({
-//       token,
-//       user: user.rows[0]
-//     });
-//   } catch (err) {
-//     next(err);
-//   }
-// };
-// export const Register = async (
-//   req: Request,
-//   res: Response,
-//   next: NextFunction,
-// ) => {
-//   try {
-     
-//     const userData = await req.body as UserRequest;
-//     const hashedPassword = await bcrypt.hash(userData.password, 10);
-
-//     const query = `
-//       INSERT INTO users (name, password)
-//       VALUES ($1, $2)
-//       RETURNING *;
-//     `;
-//      const result = await pool.query(query, [userData.name, hashedPassword]);
-
-//     res.status(201).json(result.rows[0]);
-    
-//     let data = JSON.stringify({
-//       Username: "ese",
-//       UserGroup: "a",
-//       Agent: "AgentUSD01",
-//       CompanyKey: process.env.COMPANY_KEY || "CB33E42BFAD04F90BA3B25F7EB257810",
-//       ServerId: process.env.SERVER_ID || "test01",
-//     });
-
-//     let config = {
-//       method: "post",
-//       maxBodyLength: Infinity,
-//       url: "/web-root/restricted/player/register-player.aspx",
-//       headers: {
-//         "Content-Type": "application/json",
-//       },
-//       data: data,
-//     };
-
-//     // axiosInstance(config)
-//     //   .then((response) => {
-//     //     console.log(JSON.stringify(response.data));
-//     //   })
-//     //   .catch((error) => {
-//     //     console.log(error);
-//     //   });
-
-//     // next();
-//   } catch (error) {
-//     res.status(500).json({ message: "Registration failed", error });
-//   }
-// };
