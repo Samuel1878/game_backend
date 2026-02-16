@@ -1,7 +1,7 @@
-import auth from "@/routes/auth.route.js";
-import game from "@/routes/game.route.js";
-import user from "@/routes/user.route.js";
-import admin from "@/routes/admin.route.js";
+import auth from "../routes/auth.route.js";
+import game from "../routes/game.route.js";
+import user from "../routes/user.route.js";
+import admin from "../routes/admin.route.js";
 import type { Application } from "express";
 const api = `/api/v${process.env.VERSION ||"1"}`;
 const mountRoutes = (app:Application) => {

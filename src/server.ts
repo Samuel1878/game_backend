@@ -1,6 +1,6 @@
-import app from "@/app.js";
+import app from "./app.js";
 import "module-alias/register";
-import { pool } from "@/config/db.config.js";
+import { pool } from "./config/db.config.js";
 
 const PORT = process.env.PORT || 3000;
 (async () => {

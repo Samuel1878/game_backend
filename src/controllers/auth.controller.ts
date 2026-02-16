@@ -1,6 +1,6 @@
-import { axiosInstance } from "@/config/api.js";
-import { pool } from "@/config/db.config.js";
-import type { ApiResponse, UserRequest } from "@/types/user.type.js";
+import { axiosInstance } from "../config/api.js";
+import { pool } from "../config/db.config.js";
+import type { ApiResponse, UserRequest } from "../types/user.type.js";
 import bcrypt from "bcryptjs";
 import type { Application, Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";

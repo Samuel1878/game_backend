@@ -1,6 +1,6 @@
 
-import { createWithdraw, deposit } from "@/controllers/tran.controller.js";
-import { getUserBallance } from "@/controllers/user.controller.js";
+import { createWithdraw, deposit } from "../controllers/tran.controller.js";
+import { getUserBallance } from "../controllers/user.controller.js";
 import { Router } from "express";
 
 const router = Router();

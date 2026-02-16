@@ -1,10 +1,10 @@
-import { axiosInstance } from "@/config/api.js";
-import { pool } from "@/config/db.config.js";
+import { axiosInstance } from "../config/api.js";
+import { pool } from "../config/db.config.js";
 import type {
   depositFormData,
   paramType,
   withdrawalInfo,
-} from "@/types/user.type.js";
+} from "../types/user.type.js";
 import type { NextFunction, Request, Response } from "express";
 
 export const deposit = async (req: Request, res: Response) => {

@@ -1,6 +1,6 @@
-import { axiosInstance } from "@/config/api.js";
-import { pool } from "@/config/db.config.js";
-import type { User } from "@/types/user.type.js";
+import { axiosInstance } from "../config/api.js";
+import { pool } from "../config/db.config.js";
+import type { User } from "../types/user.type.js";
 import type { Application, Request, Response, NextFunction } from "express";
 
 export const getUsers = async (_req: Request, res: Response, next: NextFunction) => {

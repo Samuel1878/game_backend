@@ -2,7 +2,7 @@ import express from 'express';
 import type {Application, NextFunction, Request, Response} from "express"
 import cors from "cors";
 import dotenv from "dotenv";
-import mountRoutes from '@/routes/index.route.js';
+import mountRoutes from './routes/index.route.js';
 
 dotenv.config();
 const app: Application = express();

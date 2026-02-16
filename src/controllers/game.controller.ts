@@ -1,4 +1,4 @@
-import { axiosInstance } from "@/config/api.js";
+import { axiosInstance } from "../config/api.js";
 import axios from "axios";
 import type { NextFunction, Request, Response} from "express"
 export const getGameList = async (req: Request, res: Response,next:NextFunction) => {
