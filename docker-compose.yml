@@ -1,0 +1,30 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: game_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: zynn
+      POSTGRES_PASSWORD: Aa187881@
+      POSTGRES_DB: game_db
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  backend:
+    build: .
+    container_name: game_backend
+    restart: always
+    depends_on:
+      - postgres
+    environment:
+      DATABASE_URL: postgresql://zynn:Aa187881@@postgres:5432/game_db
+      PORT: 3000
+    ports:
+      - "3000:3000"
+
+volumes:
+  pgdata:

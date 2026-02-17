@@ -1,1 +1,0 @@
-{"version":3,"file":"game.controller.d.ts","sourceRoot":"","sources":["../../src/controllers/game.controller.ts"],"names":[],"mappings":"AAEA,OAAO,KAAK,EAAE,YAAY,EAAE,OAAO,EAAE,QAAQ,EAAC,MAAM,SAAS,CAAA;AAC7D,eAAO,MAAM,WAAW,GAAU,KAAK,OAAO,EAAE,KAAK,QAAQ,EAAC,MAAK,YAAY,kBAkC9E,CAAC;AACF,eAAO,MAAM,aAAa,GAAU,KAAI,OAAO,EAAE,KAAI,QAAQ,EAAE,MAAK,YAAY,kBAkC/E,CAAA"}

@@ -44,5 +44,8 @@
     "moduleDetection": "force",
     "skipLibCheck": true,
     "esModuleInterop": true,
-  }
+  },
+  "exclude": [
+    "prisma.config.ts"
+  ]
 }
