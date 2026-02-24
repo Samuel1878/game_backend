@@ -1,6 +1,5 @@
-
 import { createWithdraw, deposit } from "../controllers/tran.controller.js";
-import { getUserBallance } from "../controllers/user.controller.js";
+import { getUserBallance, getUserProfile } from "../controllers/user.controller.js";
 import { Router } from "express";
 
 const router = Router();
@@ -8,9 +7,7 @@ const router = Router();
 router.get("/", (req, res) => {
   res.send("User route");
 });
-router.get("/profile", (req, res) => {
-  res.send("User profile");
-}); 
+router.get("/profile",getUserProfile); 
 router.get("/balance", getUserBallance)
 router.get("/settings", (req, res) => {
   res.send("User settings");

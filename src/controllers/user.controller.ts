@@ -13,12 +13,27 @@ export const getUsers = async (_req: Request, res: Response, next: NextFunction)
   }
 };
 
-// READ ONE
-export const getUserById = async (req: Request, res: Response, next: NextFunction) => {
+export const getUserProfile = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
-    const { id } = req.params;
-    const result = await pool.query("SELECT * FROM users WHERE id = $1", [id]);
-    if (result.rows.length === 0) return res.status(404).json({ message: "User not found" });
+    const userName = req.session.userName;
+    console.log("restoring :", userName)
+    if (!userName) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const result = await pool.query(
+      "SELECT * FROM users WHERE name = $1",
+      [userName]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
     res.json(result.rows[0]);
   } catch (err) {
     console.error(err);
@@ -68,7 +83,7 @@ export const deleteUser = async (req: Request, res: Response, next: NextFunction
 export const getUserBallance = async (req:Request, res:Response, next:NextFunction)=>{
   try {
       const {name} = req.query;
-  console.log(name)
+  // console.log(name)
       let data = JSON.stringify({
   "Username": name,
   "CompanyKey": "CB33E42BFAD04F90BA3B25F7EB257810",

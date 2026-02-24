@@ -64,3 +64,6 @@ export interface withdrawalInfo {
   
   
 }
+export interface JwtPayload {
+  userId: string;
+}

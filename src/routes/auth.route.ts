@@ -1,4 +1,4 @@
-import { Login ,Register} from "../controllers/auth.controller.js";
+import { login,logout,Register} from "../controllers/auth.controller.js";
 
 import { Router } from "express";
 
@@ -11,5 +11,6 @@ router.get("/", (req, res,next) => {
 
 
 router.post("/register", Register);
-router.post("/login", Login);
+router.post("/login", login);
+router.post("/logout", logout)
 export default router;
