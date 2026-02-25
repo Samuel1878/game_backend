@@ -11,8 +11,7 @@ import cookieParser from "cookie-parser";
 
 const PgStore = pgSession(session);
 
-
-export const app = express();
+const app = express();
 const server = createServer(app);
 const sessionMiddleware = session({
     store: new PgStore({
@@ -31,7 +30,7 @@ const sessionMiddleware = session({
   })
 // Middlewares
 app.use(cors({
-  origin: "http://localhost:5173", 
+ origin: ["http://localhost:5173", "http://localhost:5174"],
   credentials: true,
 }));
 app.use(express.json());
@@ -61,7 +60,7 @@ app.use((_req, res) => {
 
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173",
+    origin: ["http://localhost:5173", "http://localhost:5174"],
     credentials: true,
   },
 });
@@ -70,5 +69,5 @@ io.use((socket, next) => {
 });
 
 initSocket(io);
-
+export { io ,app}
 export default server;

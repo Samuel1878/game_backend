@@ -1,3 +1,14 @@
+export interface AgentInput {
+  Username: string;
+  Password: string;
+  Currency: string;
+  Min: number;
+  Max: number;
+  MaxPerMatch: number;
+  CasinoTableLimit: number;
+  IsTwoFAEnabled?: boolean;
+}
+
 export interface User {
   id?: number;
   name: string;
@@ -61,8 +72,6 @@ export interface withdrawalInfo {
   updated_at?:string;
   txn_id?:string;
   is_completed?:boolean;
-  
-  
 }
 export interface JwtPayload {
   userId: string;

@@ -23,8 +23,12 @@ export const initSocket = (io: Server) => {
       }
   
       console.log("Socket connected:", socket.id);
-      const response = await getUserBallance(req.session.userName);
-
+ 
+    socket.on("join", (uid) => {
+        socket.join(`user-${uid}`);
+        console.log("JOINED", uid)
+    });
+       const response = await getUserBallance(req.session.userName);
     socket.emit("balance-update", response);
 
     socket.on("deposit", (data:any) => depositHandler(socket, data));

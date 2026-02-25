@@ -1,4 +1,5 @@
 
+import { axiosInstance } from "@/config/api.js";
 import { pool } from "../config/db.config.js";
 import bcrypt from "bcryptjs";
 import type { Request, Response, NextFunction } from "express";
@@ -18,7 +19,6 @@ export const Register = async (
   try {
     const { name, password } = req.body;
     await client.query("BEGIN");
-    // Check existing
     const exists = await client.query("SELECT id FROM users WHERE name=$1", [
       name,
     ]);
@@ -29,23 +29,21 @@ export const Register = async (
     }
 
     const hashed = await bcrypt.hash(password, 10);
-    // Insert local user
     const result = await client.query(
       `INSERT INTO users (name,password)
        VALUES ($1,$2)
        RETURNING *`,
-      [name, hashed],
+      [name, hashed]
     );
 
-    const user = await result.rows[0];
+    const user = result.rows[0];
     await client.query("COMMIT");
     delete user.password;
-
-    req.session.userName = user.rows[0].name;
-    res.json(user);
+    req.session.userName = result.rows[0].name;
+    res.status(200).json(user);
   } catch (err) {
-    res.status(500).json({ message: "Registration failed", error: err });
     await client.query("ROLLBACK");
+    res.status(500).json({ message: "Registration failed", error: err });
     next(err);
   } finally {
     client.release();
@@ -56,23 +54,19 @@ export const login = async (req: Request, res: Response, next:NextFunction) => {
   const client = await pool.connect();
   try {
     const { name, password } = req.body;
-    //  let userRes: ApiResponse;
-
     const userResult = await client.query("SELECT * FROM users WHERE name=$1", [
       name,
     ]);
 
     if (!userResult.rows.length) return res.status(401).json({ message: "Invalid credentials : " + name });
     const user = userResult.rows[0];
-
     const valid = await bcrypt.compare(password, user.password);
     if (!valid)
         return res
           .status(401)
           .json({ message: "Invalid credentials (password)" });
-    // const token = signToken({ userId: user.id });
     req.session.userName = userResult.rows[0].name;
-    res.json(user);
+    res.status(200).json(user);
   } catch (error) {
       await client.query("ROLLBACK");
     res.status(500).json({ message: "Internal Server Error!" });

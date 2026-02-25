@@ -1,3 +1,4 @@
+import { io } from "@/app.js";
 import { axiosInstance } from "../config/api.js";
 import { pool } from "../config/db.config.js";
 import type {
@@ -58,7 +59,7 @@ export const deposit = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Failed to create deposit" });
 
     console.log("Deposit inserted:", result.rows[0]);
-
+    io.emit("deposit:created", result.rows[0]);
     res.json(result.rows[0]);
   } catch (err) {
     console.error("Deposit error:", err);
@@ -101,10 +102,7 @@ export const updateDeposit = async (req: Request, res: Response) => {
 
   try {
     const { id, amount, uid, inv_id } = req.body;
-    // console.log(req.params)
-    // console.log("body",req.body)
     await client.query("BEGIN");
-
     //find User
     const userRes = await client.query(`SELECT name FROM users WHERE uid=$1`, [
       uid,
@@ -114,20 +112,17 @@ export const updateDeposit = async (req: Request, res: Response) => {
       return res.status(403).json({ message: "User not found" });
     }
     // Lock deposit
-
     const depositRes = await client.query(
       `SELECT * FROM deposits WHERE id=$1 FOR UPDATE`,
       [id],
     );
-
     if (!depositRes.rows.length) {
       await client.query("ROLLBACK");
       return res.status(404).json({ message: "Deposit not found" });
     }
-
     const deposit = depositRes.rows[0];
     console.log(deposit);
-
+    
     if (deposit.status === "approved") {
       await client.query("ROLLBACK");
       return res.status(400).json({ message: "Already approved" });
@@ -159,46 +154,17 @@ export const updateDeposit = async (req: Request, res: Response) => {
       data: data,
     };
 
-    const response = await axiosInstance.request(config);
-    if (response.status !== 200 || !response.data?.txnId)
-      return res.status(402).send("Third Party API ERROR");
-
-    //Update Deposit on DB
-
-    // Lock wallet
-    // const walletRes = await client.query(
-    //   `SELECT * FROM wallets WHERE user_id=$1 FOR UPDATE`,
-    //   [deposit.user_id]
-    // );
-
-    // if (!walletRes.rows.length) {
-    //   await client.query("ROLLBACK");
-    //   return res.status(404).json({ message: "Wallet not found" });
-    // }
-
-    // Credit wallet
-    // await client.query(
-    //   `
-    //   UPDATE wallets
-    //   SET balance = balance + $1,
-    //       updated_at = NOW()
-    //   WHERE user_id=$2
-    //   `,
-    //   [amount, deposit.user_id]
-    // );
-
-    // Transaction ledger
-    // await client.query(
-    //   `
-    //   INSERT INTO transactions (user_id, amount, type)
-    //   VALUES ($1,$2,'deposit')
-    //   `,
-    //   [deposit.user_id, deposit.amount]
-    // );
-
-    await client.query("COMMIT");
-
-    res.json({ message: "Deposit approved & wallet credited" });
+    await axiosInstance.request(config).then(async(e)=>{
+      if (e.status===200){
+        io.to(`user-${uid}`).emit("balance-update", e.data?.balance)
+        await client.query("COMMIT");
+        res.status(200).json({ message: "Deposit approved & wallet credited" });
+      }
+    }).catch(async(e)=>{
+      await client.query("ROLLBACK");
+      console.error(e);
+      return res.status(203).json({message:"Third party server failed to updated"});
+    })
   } catch (error) {
     await client.query("ROLLBACK");
     console.error(error);
