@@ -2,6 +2,7 @@ import { axiosInstance } from "@/config/api.js";
 import { pool } from "@/config/db.config.js";
 import type { NextFunction, Request, Response } from "express";
 import { io } from "../app.js";
+import type { AgentInput } from "@/types/user.type.js";
 
 export const createAgent = async (req: Request, res: Response) => {
   const client = await pool.connect();
@@ -12,7 +13,7 @@ export const createAgent = async (req: Request, res: Response) => {
     // 1️⃣ Check local duplicate
     const exists = await client.query(
       "SELECT id FROM agents WHERE username=$1",
-      [body.Username]
+      [body.Username],
     );
     if (exists.rows.length) {
       await client.query("ROLLBACK");
@@ -23,13 +24,14 @@ export const createAgent = async (req: Request, res: Response) => {
       `/web-root/restricted/agent/register-agent.aspx`,
       {
         ...body,
-          CompanyKey: "CB33E42BFAD04F90BA3B25F7EB257810",
-     ServerId: "test01",
+        CompanyKey: "44348206360E4C218C9C5CA41E7EA02A",
+        ServerId: "test01",
       },
-      { headers: { "Content-Type": "application/json" } }
+      { headers: { "Content-Type": "application/json" } },
     );
     if (response.data?.error?.id !== 0) {
       await client.query("ROLLBACK");
+      console.log(response?.data);
       return res.status(400).json(response.data.error);
     }
     // 3️⃣ Save locally
@@ -49,12 +51,12 @@ export const createAgent = async (req: Request, res: Response) => {
         body.CasinoTableLimit,
         body.IsTwoFAEnabled ?? true,
         process.env.SERVER_ID,
-      ]
+      ],
     );
     await client.query("COMMIT");
 
     io.emit("agent:created");
-    res.json(result.rows[0]);
+    res.status(200).json(result.rows[0]);
   } catch (err) {
     await client.query("ROLLBACK");
     console.error(err);
@@ -64,45 +66,111 @@ export const createAgent = async (req: Request, res: Response) => {
   }
 };
 export const getAgents = async (_: Request, res: Response) => {
-    try {
-         const result = await pool.query(
-    "SELECT * FROM agents ORDER BY created_at DESC"
-  );
-  res.status(200).json(result.rows);
-    } catch (error) {
-        res.status(500).json({message:"Query failed"})
-    }
- 
+  try {
+    const result = await pool.query(
+      "SELECT * FROM agents ORDER BY created_at DESC",
+    );
+
+    res.status(200).json(result.rows);
+  } catch (error) {
+    res.status(500).json({ message: "Query failed" });
+  }
 };
 export const updateAgent = async (req: Request, res: Response) => {
-  const { id } = req.params;
+    const client = await pool.connect();
+  try {
+    client.query("BEGIN")
+    const body: { agent: AgentInput; id: number | string } = req.body;
+    console.log(body)
+    let data = JSON.stringify({
+      Username: body.agent?.Username,
+      Min: body.agent?.Min,
+      Max: body.agent?.Max,
+      MaxPerMatch: body.agent?.MaxPerMatch,
+      CasinoTableLimit: body?.agent?.CasinoTableLimit,
+      CompanyKey: process.env?.COMPANY_KEY,
+      ServerId: " test01",
+    });
 
-  const result = await pool.query(
-    `
+    let config = {
+      method: "post",
+      maxBodyLength: Infinity,
+      url: "/web-root/restricted/agent/update-agent-preset-bet-settings.aspx",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      data: data,
+    };
+    const response = await axiosInstance.request(config);
+    if (response.data?.error?.id !== 0) {
+      await client.query("ROLLBACK");
+      console.log(response?.data);
+      return res.status(400).json(response.data.error);
+    }
+
+    const result = await client.query(
+      `
     UPDATE agents
     SET min=$1, max=$2, max_per_match=$3, casino_table_limit=$4
     WHERE id=$5
     RETURNING *
     `,
-    [
-      req.body.Min,
-      req.body.Max,
-      req.body.MaxPerMatch,
-      req.body.CasinoTableLimit,
-      id,
-    ]
-  );
+      [
+        body.agent?.Min,
+       body.agent?.Max,
+        body.agent?.MaxPerMatch,
+       body.agent?.CasinoTableLimit,
+        body?.id,
+      ],
+    );
 
-  io.emit("agent:updated");
-
-  res.json(result.rows[0]);
+    io.emit("agent:updated");
+    client.query("COMMIT")
+    res.status(200).json(result.rows[0]);
+  } catch (error) {
+    console.log(error)
+        await client.query("ROLLBACK");
+    res.status(500).json({message:"Internal server error"})
+  }
 };
 export const deleteAgent = async (req: Request, res: Response) => {
-  await pool.query("DELETE FROM agents WHERE id=$1", [req.params.id]);
+  const client = await pool.connect()
+  try {
+     client.query("BEGIN");
+    const {id , status} = req.body;
+    const result = await pool.query("UPDATE agents SET status=$1 WHERE id=$2 RETURNING *", [status,id]);
+    let data = JSON.stringify({
+  "Username": result.rows[0]?.username,
+  "Status": status,
+  "CompanyKey": "44348206360E4C218C9C5CA41E7EA02A",
+  "ServerId": "test01"
+});
 
-  io.emit("agent:deleted");
+let config = {
+  method: 'post',
+  maxBodyLength: Infinity,
+  url: '/web-root/restricted/agent/update-agent-status.aspx',
+  headers: { 
+    'Content-Type': 'application/json'
+  },
+  data : data
+};
 
-  res.json({ message: "Deleted" });
+    io.emit("agent:updated");
+    await axiosInstance.request(config).then((e)=>{
+        client.query("COMMIT")
+      res.status(200).json({ message: "Deleted" });
+    }).catch((err)=>{
+      res.status(502).json({message:"Thrid party server error!"})
+    }).finally( ()=>{
+      client.release()
+    })
+   
+  } catch (error) {
+    client.query("ROLLBACK");
+    res.status(500).json({message:"Internal server error!"})
+  }
+
 };
 // export const registerAgent = async (
 //   req: Request,
@@ -168,7 +236,7 @@ export const registerUserToSBO = async ({
           UserGroup: "a",
           Agent: "AgentMM",
           CompanyKey:
-            process.env.COMPANY_KEY || "CB33E42BFAD04F90BA3B25F7EB257810",
+            process.env.COMPANY_KEY || "44348206360E4C218C9C5CA41E7EA02A",
           ServerId: process.env.SERVER_ID || "test02",
         })
         .then((response) => {
@@ -184,3 +252,19 @@ export const registerUserToSBO = async ({
         }));
   } catch (apiError) {}
 };
+export const getUserById = async (req:Request, res:Response) => {
+  const pgsql = await pool.connect();
+  try {
+    const id = req.params?.id;
+    console.log(req.params);
+    pgsql.query("BEGIN");
+    const result = await pgsql.query(`SELECT * FROM users WHERE id=$1`,[id]);
+    if (result.rows[0]){
+    return res.status(200).json(result.rows[0]);
+
+    }
+    
+  } catch (error) {
+    res.status(500).json({message:"Internal Error!"})
+  }
+}

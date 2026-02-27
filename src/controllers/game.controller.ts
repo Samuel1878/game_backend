@@ -5,7 +5,7 @@ export const getGameList = async (req: Request, res: Response,next:NextFunction)
   try {
     const gameIDs = req.query.gameIDs as number[] | undefined;
     let data = JSON.stringify({
-      CompanyKey: "CB33E42BFAD04F90BA3B25F7EB257810",
+      CompanyKey: "44348206360E4C218C9C5CA41E7EA02A",
       ServerId: "test01",
       GpId: 10000,
       gameId:0,
@@ -40,7 +40,7 @@ export const getGameByGpId = async (req:Request, res:Response, next:NextFunction
   try {
       const { gpid } = req.query
       let data = JSON.stringify({
-        CompanyKey: "CB33E42BFAD04F90BA3B25F7EB257810",
+        CompanyKey: "44348206360E4C218C9C5CA41E7EA02A",
         ServerId: "test01",
         GpId: gpid,
         IsGetAll: false

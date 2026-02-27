@@ -1,6 +1,6 @@
 export interface AgentInput {
   Username: string;
-  Password: string;
+  Password?: string;
   Currency: string;
   Min: number;
   Max: number;

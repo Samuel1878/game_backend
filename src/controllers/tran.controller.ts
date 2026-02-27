@@ -139,7 +139,7 @@ export const updateDeposit = async (req: Request, res: Response) => {
       Username: userRes.rows[0].name,
       TxnId: inv_id,
       Amount: amount,
-      CompanyKey: "CB33E42BFAD04F90BA3B25F7EB257810",
+      CompanyKey: "44348206360E4C218C9C5CA41E7EA02A",
       ServerId: "test01",
     });
     // Update deposit to SBO

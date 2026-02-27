@@ -30,7 +30,13 @@ export const initSocket = (io: Server) => {
     });
        const response = await getUserBallance(req.session.userName);
     socket.emit("balance-update", response);
-
+    socket.on("admin", (uid)=>{
+      socket.join(`admin-${uid}`);
+      console.log("ADMIN MONITORING", uid);
+    })
+    socket.on("agent:created", (data)=>{
+      console.log(data)
+    })
     socket.on("deposit", (data:any) => depositHandler(socket, data));
       socket.on("disconnect", () => {
         console.log("Disconnected:", socket.data.userName);
